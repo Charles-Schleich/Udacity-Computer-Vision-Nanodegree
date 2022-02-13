@@ -58,3 +58,4 @@ for j in range(0, dst.shape[0]):
             cv2.circle( corner_image, (i, j),1, (0,255,0), 1)
 
 plt.imshow(corner_image)
+plt.show()
