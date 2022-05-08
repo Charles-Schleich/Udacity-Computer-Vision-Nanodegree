@@ -12,6 +12,7 @@ from torch import optim
 import torch.nn.functional as F
 from collections import OrderedDict
 
+print("Start")
 # requires_grad tells pytorch to track all operations on this tensor using autograd
 x = torch.randn(2,2, requires_grad=True)
 print(x)
@@ -45,6 +46,7 @@ transform = transforms.Compose([transforms.ToTensor(),
 # Download and load the training data
 trainset = datasets.MNIST('MNIST_data/', download=True, train=True, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)
+
 # Hyperparameters for our network
 input_size = 784
 hidden_sizes = [128, 64]
@@ -103,7 +105,7 @@ print("updated weights - ",  model.fc1.weight )
 ##### Multiple loops of training! 
 ########################################################################################################################
 
-epochs = 20
+epochs = 5
 print_every = 40
 steps =0 
 for e in range(epochs):
@@ -120,7 +122,6 @@ for e in range(epochs):
         loss.backward()
         # weight update step
         optimizer.step()
-
         # Loss is a scalar tensor, to get the value out of the tensor
         running_loss += loss.item()
         if steps % print_every ==0:
@@ -130,8 +131,9 @@ for e in range(epochs):
             running_loss = 0
 
 # Training is finished training
-
 images, labels = next(iter(trainloader))
+# images, labels = next(iter(trainloader))
+
 
 img = images[0].view(1,784)
 with torch.no_grad():
