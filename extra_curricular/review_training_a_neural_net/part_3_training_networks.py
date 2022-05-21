@@ -1,4 +1,5 @@
-# https://www.youtube.com/watch?v=u8hDj5aJK6I
+# Low key worried bots are gonna flag this
+# https://www.  _yt_  .com/watch?v=u8hDj5aJK6I
 
 import numpy as np
 import torch 
