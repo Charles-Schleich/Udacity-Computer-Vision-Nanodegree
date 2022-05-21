@@ -1,3 +1,4 @@
 /MNIST_data
 /F_MNIST_data
 /__pycache__
+*checkpoint*
