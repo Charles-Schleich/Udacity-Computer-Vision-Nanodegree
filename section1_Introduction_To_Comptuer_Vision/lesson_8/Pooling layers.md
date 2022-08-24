@@ -14,6 +14,7 @@ Becomes, Reduces 16 -> 4
 6 8
 9 7
 
+Global pooling
 
 Non-Global pooling layers reduce the size:
 Becomes, Reduces 16 -> 4
@@ -23,8 +24,7 @@ Becomes, Reduces 16 -> 4
 Global Average pooling:
     Dont specify window size nor stride 
     More extreme 
-    add global nodes 
-    80
+    Average global nodes per filter
     Then divide by number of nodes
     Do this on a per feature map level
     Each Feature map can be reduced to a SINGLE value
