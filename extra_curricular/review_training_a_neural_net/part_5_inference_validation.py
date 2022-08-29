@@ -126,6 +126,7 @@ for e in range(epochs):
         
         optimizer.zero_grad()
         
+        
         output = model.forward(images)
         loss = criterion(output, labels)
         loss.backward()
