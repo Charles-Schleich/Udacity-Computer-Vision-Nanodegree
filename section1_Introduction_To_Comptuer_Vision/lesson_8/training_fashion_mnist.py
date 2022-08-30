@@ -83,25 +83,28 @@ class Net(nn.Module):
         super(Net, self).__init__()
 
         # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', device=None, dtype=None)
-        # Convolutional filters weights are randomly generated
+        # Convolutional filters weights are randomly generated - no manual generation or invocation
+
         # 1 input image channel (Grayscale image)
         # 10 output channels / feature maps
-        # 3x3 convolution kernel
-        final_conv_layer_fmaps = 20
+        # 3x3 conv kernel
         self.conv1 = nn.Conv2d(1, 10, 3)
 
-        # 1 input image channel, 20 output channels / feature maps, 3x3 convolution kernel
-        self.conv2 = nn.Conv2d(1, final_conv_layer_fmaps, 3)
+        # Maxpool, Kernel Size = 2, Stride = 2 
+        # Therefore no overlapping
+        self.pool = nn.MaxPool2d(2, 2)
 
-        # # 1 input image channel (Grayscale image), 30 output channels / feature maps, 3x3 convolution kernel
-        # self.conv3 = nn.Conv2d(1, 40, 3)
+        # Second Conv2D layer
+        # 1 input image channel, 20 output channels / feature maps, 3x3 conv kernel
+        self.conv2 = nn.Conv2d(10, 20, 3)
 
         # Fully-connected layers, also known as linear layers,
         # torch.nn.Linear(in_features, out_features, bias=True, device=None, dtype=None)
-        self.linear1 = nn.Linear(final_conv_layer_fmaps, 10)
+        # Conv2 output is an image of 11 x 11 
+        # Max pooling with stride = 2 means the input to the linear layer is is 5 x 5 
+        # Therefor, 20 * 5 * 5 
+        self.linear1 = nn.Linear(20*5*5, 10)
 
-        # Maxpool, Kernel Size = 2, Stride = 2
-        self.pool = nn.MaxPool2d(2, 2)
         # DROPOUT LAYERS
         # https://stats.stackexchange.com/questions/240305/where-should-i-place-dropout-layers-in-a-neural-network
         self.dropout = nn.Dropout(p=drop_p)
@@ -113,30 +116,28 @@ class Net(nn.Module):
         # CONV->RELU->DROP->POOL
 
         # x -> conv1 -> relu -> pool -> y
-        print("x: ",x.size()) # torch.Size([20, 1, 28, 28])
-        conv1_out = self.conv1(x)
-        #  Batch size, fmaps, w, h
-        # print("conv1_out: ",conv1_out.size()) # torch.Size([20, 10, 26, 26])
-        relu1_out = F.relu(conv1_out)
-        # print("relu1_out: ",relu1_out.size()) # torch.Size([20, 10, 26, 26])
-        drop1_out = self.dropout(relu1_out)
-        # print("drop1_out: ",drop1_out.size()) # torch.Size([20, 10, 26, 26])
-        pool1_out = self.pool(drop1_out)
-        print("pool1_out: ",pool1_out.size()) # torch.Size([20, 10, 26, 26])
+        # print("x: ", x.size())  # torch.Size([20, 1, 28, 28])
+        relu1_out = F.relu(self.conv1(x))
+        # drop1_out = self.dropout(relu1_out)
+        # print("relu1_out: ", relu1_out.size())  # torch.Size([20, 10, 26, 26])
+        pool1_out = self.pool(relu1_out)
+        # print("pool1_out: ", pool1_out.size())  # torch.Size([20, 10, 13, 13])
 
-        # RuntimeError: Given groups=1, weight of size [20, 1, 3, 3], expected input[20, 10, 13, 13] to have 1 channels, but got 10 channels instead
 
-        conv2_out = self.conv2(pool1_out)
-        relu2_out = F.relu(conv2_out)
-        drop2_out = self.dropout(relu2_out)
-        pool2_out = self.pool(drop2_out)
+        relu2_out = F.relu(self.conv2(pool1_out))
+        # drop2_out = self.dropout(relu2_out)
+        pool2_out = self.pool(relu2_out)
+        # print("pool2_out: ", pool2_out.size())  # torch.Size([20, 10, 13,13])
 
-        linear1_out = self.linear1(pool2_out)
+        flatten_out = pool2_out.view(x.size(0), -1)
+        # print("flatten_out: ", flatten_out.size())  # torch.Size([20, 10, 13,13])
+        linear1_out = F.relu(self.linear1(flatten_out))
+
+
 
         softmax_out = F.log_softmax(linear1_out, dim=1)
-        # first_layer_out = self.pool(F.relu(self.conv2(x)))
-        # return F.log_softmax(x, dim=1)
-        return pool2_out
+        return softmax_out
+
 
 net = Net()
 print(net)
@@ -144,16 +145,19 @@ print(net)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.001)
 
+# ██████  ██████  ███████     ████████ ██████   █████  ██ ███    ██ ███████ ██████      
+# ██   ██ ██   ██ ██             ██    ██   ██ ██   ██ ██ ████   ██ ██      ██   ██     
+# ██████  ██████  █████          ██    ██████  ███████ ██ ██ ██  ██ █████   ██   ██     
+# ██      ██   ██ ██             ██    ██   ██ ██   ██ ██ ██  ██ ██ ██      ██   ██     
+# ██      ██   ██ ███████        ██    ██   ██ ██   ██ ██ ██   ████ ███████ ██████      
 
-
-
-# PRE Trained Accuracy 
+# PRE Trained Accuracy
 # Calculate accuracy before training
 correct = 0
 total = 0
 # Iterate through test dataset
 for images, labels in test_loader:
-    
+
     # warp input images in a Variable wrapper
     images = Variable(images)
 
@@ -169,7 +173,8 @@ for images, labels in test_loader:
     total += labels.size(0)
     correct += (predicted == labels).sum()
 # calculate the accuracy
-accuracy = 100 * correct / total
+# to convert `correct` from a Tensor into a scalar, use .item()
+accuracy = 100 * correct.item() / total
 
 # print it out!
-print('Accuracy before training: ', accuracy)
+print("Accuracy before training: ", accuracy)
